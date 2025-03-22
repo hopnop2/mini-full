@@ -1,17 +1,20 @@
+// Card.tsx
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import TodoContext, { Todo } from "@/context/Todo.context";
-import { Checkbox } from "react-native-paper";
 import { useContext } from "react";
 
 interface CardProps {
   todo: Todo;
+  isSelected: boolean; // สถานะว่าโน้ตนี้ถูกเลือกหรือไม่
+  onSelect: (id: number) => void; // ฟังก์ชันสำหรับเลือก/ยกเลิกเลือก
 }
 
-export default function Card({ todo }: CardProps) {
-  const { removeTodo, toggleTodo } = useContext(TodoContext);
+export default function Card({ todo, isSelected, onSelect }: CardProps) {
+  const { removeTodo } = useContext(TodoContext);
 
   const handleRemoveTodo = (id: number) => {
-    Alert.alert("ลบรายการ", "คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?", [
+    Alert.alert("ลบโน้ต", "คุณแน่ใจหรือไม่ว่าต้องการลบโน้ตนี้?", [
       {
         text: "ยกเลิก",
         style: "cancel",
@@ -19,65 +22,88 @@ export default function Card({ todo }: CardProps) {
       {
         text: "ลบ",
         style: "destructive",
-        onPress: () => removeTodo?.(id),
+        onPress: () => {
+          removeTodo?.(id);
+          Alert.alert("สำเร็จ", "ลบโน้ตเรียบร้อยแล้ว");
+        },
       },
     ]);
   };
 
   return (
-    <TouchableOpacity
-      onLongPress={() => handleRemoveTodo(todo.id)}
-      activeOpacity={0.7}
-      style={styles.todoCard}
-    >
-      <Checkbox.Item
-        label=""
-        status={todo.done ? "checked" : "unchecked"}
-        onPress={() => toggleTodo?.(todo.id)}
-        color="#000000" // Checkbox สีดำ
-        uncheckedColor="#666666" // Checkbox ที่ยังไม่เลือกเป็นสีเทาเข้ม
-      />
+    <View style={styles.noteCard}>
+      {/* Checkbox สำหรับเลือก */}
+      <TouchableOpacity onPress={() => onSelect(todo.id)}>
+        <Ionicons
+          name={isSelected ? "checkbox-outline" : "square-outline"}
+          size={24}
+          color="#333333"
+          style={styles.selectIcon}
+        />
+      </TouchableOpacity>
+
+      {/* ข้อความโน้ต */}
       <View style={styles.textContainer}>
-        <Text style={styles.todoTitle}>{todo.text}</Text>
-        <Text style={styles.todoTimestamp}>
-          {new Date(todo.timestamp!).toLocaleTimeString("th-TH", {
+        <Text style={styles.noteTitle}>{todo.text}</Text>
+        <Text style={styles.noteTimestamp}>
+          {new Date(todo.timestamp!).toLocaleString("th-TH", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
           })}
         </Text>
       </View>
-    </TouchableOpacity>
+
+      {/* ไอคอนลบ */}
+      <TouchableOpacity onPress={() => handleRemoveTodo(todo.id)}>
+        <Ionicons
+          name="trash-outline"
+          size={20}
+          color="#666666"
+          style={styles.deleteIcon}
+        />
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  todoCard: {
+  noteCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    marginVertical: 8,
-    backgroundColor: "#FFFFFF", // การ์ดสีขาว
-    borderWidth: 1,
-    borderColor: "#000000", // ขอบสีดำ
+    padding: 20,
+    marginVertical: 10,
+    backgroundColor: "#F5F5F5",
     borderRadius: 10,
-    elevation: 3, // เงาสำหรับ Android
-    shadowColor: "#000000", // เงาสีดำสำหรับ iOS
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   textContainer: {
     flex: 1,
+  },
+  noteTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333333",
+    fontFamily: "monospace",
+  },
+  noteTimestamp: {
+    fontSize: 12,
+    color: "#888888",
+    marginTop: 5,
+    fontStyle: "italic",
+  },
+  deleteIcon: {
     marginLeft: 10,
   },
-  todoTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#000000", // ข้อความสีดำ
-  },
-  todoTimestamp: {
-    fontSize: 14,
-    color: "#666666", // Timestamp สีเทาเข้ม
-    marginTop: 2,
+  selectIcon: {
+    marginRight: 10,
   },
 });

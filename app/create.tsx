@@ -1,58 +1,168 @@
 import { AppButton } from "@/components";
 import TodoContext from "@/context/Todo.context";
 import { useContext, useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, Dimensions, SafeAreaView } from "react-native";
 import { TextInput } from "react-native-paper";
+import { Link } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
 
 export default function CreateTodo() {
   const { addTodo } = useContext(TodoContext);
   const [text, setText] = useState("");
 
   const handleAddTodo = () => {
-    if (!text) {
-      Alert.alert("Error", "Please enter a todo");
+    if (!text.trim()) {
+      Alert.alert("ข้อผิดพลาด", "กรุณากรอกข้อมูลรายการ");
       return;
     }
 
-    // add todo
     addTodo?.(text);
     setText("");
-    Alert.alert("Success", "Todo added successfully");
+    Alert.alert("สำเร็จ", "เพิ่มรายการเรียบร้อยแล้ว");
   };
 
   return (
-    <View style={style.container}>
-      <Text style={style.headerText}>Add Your Todo</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* ส่วนหัว */}
+        <View style={styles.header}>
+          <Ionicons
+            name="create-outline"
+            size={width * 0.06} // ลดขนาดไอคอน
+            color="#FFFFFF"
+            style={styles.headerIcon}
+          />
+          <Text style={styles.headerText}>เพิ่มรายการใหม่</Text>
+        </View>
 
-      <View style={style.formContainer}>
-        <TextInput
-          label="Enter Todo"
-          value={text}
-          onChangeText={(text) => setText(text)}
-          mode="outlined"
-          placeholder="Enter your todo"
-        />
+        {/* ฟอร์ม */}
+        <View style={styles.formContainer}>
+          <TextInput
+            label="กรอกรายการ"
+            value={text}
+            onChangeText={(text) => setText(text)}
+            mode="outlined"
+            placeholder="พิมพ์รายการของคุณที่นี่"
+            style={styles.input}
+            outlineColor="#000000"
+            activeOutlineColor="#000000"
+            textColor="#000000"
+            placeholderTextColor="#666666"
+          />
 
-        <AppButton onPress={handleAddTodo}>Create Todo</AppButton>
+          {/* ปุ่มสร้าง */}
+          <AppButton onPress={handleAddTodo} style={styles.createButton}>
+            <Text style={styles.buttonText}>สร้างรายการ</Text>
+          </AppButton>
+
+          {/* ปุ่มกลับ */}
+          <Link href="/" asChild>
+            <AppButton style={styles.backButton}>
+              <Ionicons
+                name="arrow-back-outline"
+                size={width * 0.045} // ลดขนาดไอคอน
+                color="#000000"
+              />
+              <Text style={styles.backButtonText}>กลับ</Text>
+            </AppButton>
+          </Link>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 10,
+  },
+  header: {
+    backgroundColor: "#000000",
+    paddingVertical: 10, // ลด paddingVertical
+    paddingHorizontal: width * 0.04,
+    borderBottomWidth: 2,
+    borderBottomColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  headerIcon: {
+    marginRight: 10,
   },
   headerText: {
-    fontSize: 24,
+    fontSize: width * 0.05, // ลดขนาดข้อความ
     fontWeight: "bold",
-    marginTop: 20,
+    color: "#FFFFFF",
   },
-
   formContainer: {
-    marginVertical: 20,
-    gap: 20,
+    flex: 1,
+    paddingHorizontal: width * 0.05,
+    paddingTop: height * 0.1, // เพิ่ม paddingTop เพื่อความสมดุล
+    alignItems: "center",
+    justifyContent: "center", // จัดกึ่งกลางแนวตั้ง
+    gap: 25, // เพิ่มระยะห่างระหว่าง element
+  },
+  input: {
+    width: "90%",
+    maxWidth: 400,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    fontSize: width * 0.04,
+  },
+  createButton: {
+    backgroundColor: "#000000",
+    borderColor: "#FFFFFF",
+    borderWidth: 2,
+    paddingVertical: 14, // เพิ่ม padding
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    elevation: 4,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    alignItems: "center",
+    width: "80%", // เพิ่มขนาดปุ่ม
+    maxWidth: 300,
+  },
+  buttonText: {
+    fontSize: width * 0.045, // เพิ่มขนาดข้อความ
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  backButton: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#000000",
+    borderWidth: 2,
+    paddingVertical: 12, // เพิ่ม padding
+    paddingHorizontal: 25,
+    borderRadius: 25,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    width: "60%", // เพิ่มขนาดปุ่ม
+    maxWidth: 200,
+  },
+  backButtonText: {
+    fontSize: width * 0.04, // เพิ่มขนาดข้อความ
+    fontWeight: "600",
+    color: "#000000",
+    marginLeft: 5,
   },
 });

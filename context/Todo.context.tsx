@@ -1,3 +1,4 @@
+// TodoContext.tsx
 import { createContext, useState } from "react";
 
 export interface Todo {
@@ -12,6 +13,7 @@ interface TodoContextType {
   addTodo: (text: string) => void;
   toggleTodo: (id: number) => void;
   removeTodo: (id: number) => void;
+  removeMultipleTodos: (ids: number[]) => void; // ฟังก์ชันใหม่
 }
 
 const TodoContext = createContext<TodoContextType>({
@@ -19,14 +21,12 @@ const TodoContext = createContext<TodoContextType>({
   addTodo: () => {},
   toggleTodo: () => {},
   removeTodo: () => {},
+  removeMultipleTodos: () => {}, // ค่าเริ่มต้น
 });
 
-
-// create a provider
 export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
 
-  // add todo
   const addTodo = (text: string) => {
     setTodos([
       ...todos,
@@ -39,7 +39,6 @@ export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
     ]);
   };
 
-  // toggle todo
   const toggleTodo = (id: number) => {
     setTodos(
       todos.map((todo) => {
@@ -51,13 +50,19 @@ export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
-  // remove todo
   const removeTodo = (id: number) => {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
+  // ฟังก์ชันใหม่: ลบโน้ตหลายตัวพร้อมกัน
+  const removeMultipleTodos = (ids: number[]) => {
+    setTodos(todos.filter((todo) => !ids.includes(todo.id)));
+  };
+
   return (
-    <TodoContext.Provider value={{ todos, addTodo, toggleTodo, removeTodo }}>
+    <TodoContext.Provider
+      value={{ todos, addTodo, toggleTodo, removeTodo, removeMultipleTodos }}
+    >
       {children}
     </TodoContext.Provider>
   );
