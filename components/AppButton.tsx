@@ -1,27 +1,29 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from "react-native";
+import React from "react";
 
 interface AppButtonProps {
   onPress: () => void;
-  children: string;
+  children: React.ReactNode;
+  style?: ViewStyle; // เพิ่ม style เป็น optional property
 }
 
 export default function AppButton({
   children = "Create Todo",
   onPress = () => {},
+  style, // เพิ่ม style ใน props
 }: AppButtonProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.6}
-      style={style.createTodoButton}
+      style={[styles.createTodoButton, style]} // รวม style จาก props กับ style เดิม
       onPress={onPress}
     >
-      <Text style={style.buttonText}>{children}</Text>
+      {children}
     </TouchableOpacity>
   );
 }
 
-const style = StyleSheet.create({
-  // button
+const styles = StyleSheet.create({
   createTodoButton: {
     backgroundColor: "#000",
     paddingHorizontal: 10,

@@ -11,13 +11,13 @@ export default function Card({ todo }: CardProps) {
   const { removeTodo, toggleTodo } = useContext(TodoContext);
 
   const handleRemoveTodo = (id: number) => {
-    Alert.alert("Delete Todo", "Are you sure you want to delete this todo?", [
+    Alert.alert("ลบรายการ", "คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?", [
       {
-        text: "Cancel",
+        text: "ยกเลิก",
         style: "cancel",
       },
       {
-        text: "Delete",
+        text: "ลบ",
         style: "destructive",
         onPress: () => removeTodo?.(id),
       },
@@ -27,42 +27,57 @@ export default function Card({ todo }: CardProps) {
   return (
     <TouchableOpacity
       onLongPress={() => handleRemoveTodo(todo.id)}
-      activeOpacity={0.5}
-      key={todo.id}
-      style={style.todoCard}
+      activeOpacity={0.7}
+      style={styles.todoCard}
     >
       <Checkbox.Item
         label=""
         status={todo.done ? "checked" : "unchecked"}
         onPress={() => toggleTodo?.(todo.id)}
+        color="#000000" // Checkbox สีดำ
+        uncheckedColor="#666666" // Checkbox ที่ยังไม่เลือกเป็นสีเทาเข้ม
       />
-
-      <Text style={style.todoTitle}>{todo.text}</Text>
-      <Text>
-        {new Date(todo.timestamp!).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </Text>
+      <View style={styles.textContainer}>
+        <Text style={styles.todoTitle}>{todo.text}</Text>
+        <Text style={styles.todoTimestamp}>
+          {new Date(todo.timestamp!).toLocaleTimeString("th-TH", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
-const style = StyleSheet.create({
-  // todo card
+const styles = StyleSheet.create({
   todoCard: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    paddingVertical: 30,
-    marginVertical: 10,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 5,
-    elevation: 2,
+    padding: 15,
+    marginVertical: 8,
+    backgroundColor: "#FFFFFF", // การ์ดสีขาว
+    borderWidth: 1,
+    borderColor: "#000000", // ขอบสีดำ
+    borderRadius: 10,
+    elevation: 3, // เงาสำหรับ Android
+    shadowColor: "#000000", // เงาสีดำสำหรับ iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  textContainer: {
+    flex: 1,
+    marginLeft: 10,
   },
   todoTitle: {
     fontSize: 18,
-    fontWeight: 500,
+    fontWeight: "600",
+    color: "#000000", // ข้อความสีดำ
+  },
+  todoTimestamp: {
+    fontSize: 14,
+    color: "#666666", // Timestamp สีเทาเข้ม
+    marginTop: 2,
   },
 });
