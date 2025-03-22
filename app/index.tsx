@@ -17,6 +17,7 @@ export default function Index() {
   const { todos, removeMultipleTodos } = useContext(TodoContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null); // เก็บโน้ตที่เลือก
 
   const handleLogout = () => {
     console.log("Logged out");
@@ -44,13 +45,15 @@ export default function Index() {
     ]);
   };
 
+  const openPopup = (todo: Todo) => setSelectedTodo(todo);
+  const closePopup = () => setSelectedTodo(null);
+
   return (
     <View style={styles.container}>
       {/* แถบหัวเรื่อง */}
       <View style={styles.header}>
         <Ionicons name="book-outline" size={30} color="#FFFFFF" style={styles.headerIconLeft} />
         <Text style={styles.todoHeader}>รายการของฉัน</Text>
-        {/* ปุ่มสร้าง (อยู่ด้านบน) */}
         <Link asChild href="/create">
           <TouchableOpacity style={styles.createButtonHeader}>
             <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
@@ -100,6 +103,7 @@ export default function Index() {
                 todo={todo}
                 isSelected={selectedIds.includes(todo.id)}
                 onSelect={handleSelect}
+                onPress={() => openPopup(todo)} // เปิด popup
               />
             ))
         ) : (
@@ -110,13 +114,44 @@ export default function Index() {
         )}
       </ScrollView>
 
-      {/* ปุ่มลบที่เลือก (อยู่ด้านล่าง) */}
+      {/* ปุ่มลบที่เลือก */}
       {selectedIds.length > 0 && (
         <TouchableOpacity style={styles.deleteSelectedButton} onPress={handleRemoveSelected}>
           <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
           <Text style={styles.deleteSelectedText}>ลบที่เลือก ({selectedIds.length})</Text>
         </TouchableOpacity>
       )}
+
+      {/* Popup สำหรับแสดงเนื้อหาโน้ต */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={selectedTodo !== null}
+        onRequestClose={closePopup}
+      >
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupContent}>
+            {selectedTodo && (
+              <>
+                <Text style={styles.popupTitle}>{selectedTodo.text}</Text>
+                <Text style={styles.popupTimestamp}>
+                  สร้างเมื่อ: {new Date(selectedTodo.timestamp!).toLocaleString("th-TH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Text>
+                <TouchableOpacity onPress={closePopup} style={styles.closeButton}>
+                  <Ionicons name="close-circle-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.closeButtonText}>ปิด</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -132,13 +167,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 3,
   },
-  headerIconLeft: { marginRight: 10 },
   todoHeader: {
     fontSize: 24,
     fontWeight: "bold",
@@ -147,6 +176,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   createButtonHeader: { marginRight: 10 },
+  headerIconLeft: { marginRight: 10 },
   headerIconRight: { marginLeft: 10 },
   modalOverlay: {
     flex: 1,
@@ -162,11 +192,6 @@ const styles = StyleSheet.create({
     maxWidth: 300,
     borderWidth: 2,
     borderColor: "#000000",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
   },
   modalItem: {
     flexDirection: "row",
@@ -196,12 +221,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 5,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
   },
   deleteSelectedText: {
     color: "#FFFFFF",
@@ -209,4 +228,31 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 5,
   },
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  popupContent: {
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 15,
+    width: "80%",
+    maxWidth: 350,
+    borderWidth: 2,
+    borderColor: "#000000",
+    alignItems: "center",
+  },
+  popupTitle: { fontSize: 20, fontWeight: "bold", color: "#000000", marginBottom: 10 },
+  popupTimestamp: { fontSize: 14, color: "#666666", marginBottom: 20 },
+  closeButton: {
+    backgroundColor: "#000000",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  closeButtonText: { color: "#FFFFFF", fontWeight: "bold", marginLeft: 5 },
 });

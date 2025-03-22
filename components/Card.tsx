@@ -1,4 +1,3 @@
-// Card.tsx
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext, { Todo } from "@/context/Todo.context";
@@ -6,11 +5,12 @@ import { useContext } from "react";
 
 interface CardProps {
   todo: Todo;
-  isSelected: boolean; // สถานะว่าโน้ตนี้ถูกเลือกหรือไม่
-  onSelect: (id: number) => void; // ฟังก์ชันสำหรับเลือก/ยกเลิกเลือก
+  isSelected: boolean;
+  onSelect: (id: number) => void;
+  onPress: () => void; // เพิ่ม prop สำหรับกดเปิด popup
 }
 
-export default function Card({ todo, isSelected, onSelect }: CardProps) {
+export default function Card({ todo, isSelected, onSelect, onPress }: CardProps) {
   const { removeTodo } = useContext(TodoContext);
 
   const handleRemoveTodo = (id: number) => {
@@ -31,8 +31,8 @@ export default function Card({ todo, isSelected, onSelect }: CardProps) {
   };
 
   return (
-    <View style={styles.noteCard}>
-      {/* Checkbox สำหรับเลือก */}
+    <TouchableOpacity onPress={onPress} style={styles.noteCard}>
+      {/* Checkbox */}
       <TouchableOpacity onPress={() => onSelect(todo.id)}>
         <Ionicons
           name={isSelected ? "checkbox-outline" : "square-outline"}
@@ -58,14 +58,9 @@ export default function Card({ todo, isSelected, onSelect }: CardProps) {
 
       {/* ไอคอนลบ */}
       <TouchableOpacity onPress={() => handleRemoveTodo(todo.id)}>
-        <Ionicons
-          name="trash-outline"
-          size={20}
-          color="#666666"
-          style={styles.deleteIcon}
-        />
+        <Ionicons name="trash-outline" size={20} color="#666666" style={styles.deleteIcon} />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -85,25 +80,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  textContainer: {
-    flex: 1,
-  },
-  noteTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333333",
-    fontFamily: "monospace",
-  },
-  noteTimestamp: {
-    fontSize: 12,
-    color: "#888888",
-    marginTop: 5,
-    fontStyle: "italic",
-  },
-  deleteIcon: {
-    marginLeft: 10,
-  },
-  selectIcon: {
-    marginRight: 10,
-  },
+  textContainer: { flex: 1 },
+  noteTitle: { fontSize: 16, fontWeight: "500", color: "#333333" },
+  noteTimestamp: { fontSize: 12, color: "#888888", marginTop: 5 },
+  deleteIcon: { marginLeft: 10 },
+  selectIcon: { marginRight: 10 },
 });
