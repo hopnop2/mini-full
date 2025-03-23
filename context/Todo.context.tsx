@@ -1,4 +1,3 @@
-// TodoContext.tsx
 import { createContext, useState } from "react";
 
 export interface Todo {
@@ -6,14 +5,15 @@ export interface Todo {
   text: string;
   done: boolean;
   timestamp?: number;
+  image?: string | null; // เพิ่ม property image
 }
 
 interface TodoContextType {
   todos: Todo[];
-  addTodo: (text: string) => void;
+  addTodo: (todo: { text: string; image?: string | null }) => void; // ปรับ type ของ addTodo
   toggleTodo: (id: number) => void;
   removeTodo: (id: number) => void;
-  removeMultipleTodos: (ids: number[]) => void; // ฟังก์ชันใหม่
+  removeMultipleTodos: (ids: number[]) => void;
 }
 
 const TodoContext = createContext<TodoContextType>({
@@ -21,13 +21,13 @@ const TodoContext = createContext<TodoContextType>({
   addTodo: () => {},
   toggleTodo: () => {},
   removeTodo: () => {},
-  removeMultipleTodos: () => {}, // ค่าเริ่มต้น
+  removeMultipleTodos: () => {},
 });
 
 export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
 
-  const addTodo = (text: string) => {
+  const addTodo = ({ text, image }: { text: string; image?: string | null }) => {
     setTodos([
       ...todos,
       {
@@ -35,6 +35,7 @@ export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
         text,
         done: false,
         timestamp: new Date().getTime(),
+        image, // เพิ่ม image เข้าไปใน todo
       },
     ]);
   };
@@ -54,7 +55,6 @@ export const TodoProvider = ({ children }: { children: React.ReactNode }) => {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
-  // ฟังก์ชันใหม่: ลบโน้ตหลายตัวพร้อมกัน
   const removeMultipleTodos = (ids: number[]) => {
     setTodos(todos.filter((todo) => !ids.includes(todo.id)));
   };

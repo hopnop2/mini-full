@@ -8,6 +8,7 @@ import {
   Modal,
   TouchableOpacity,
   Alert,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
@@ -19,6 +20,8 @@ export default function Index() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [menuExpanded, setMenuExpanded] = useState(false);
+  const [menuHeight] = useState(new Animated.Value(0));
 
   const handleLogout = () => {
     console.log("Logged out");
@@ -48,6 +51,23 @@ export default function Index() {
 
   const openPopup = (todo: Todo) => setSelectedTodo(todo);
   const closePopup = () => setSelectedTodo(null);
+
+  const toggleMenu = () => {
+    if (menuExpanded) {
+      Animated.timing(menuHeight, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => setMenuExpanded(false));
+    } else {
+      setMenuExpanded(true);
+      Animated.timing(menuHeight, {
+        toValue: 120, // ความสูงเมื่อขยาย (ปรับได้)
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -118,19 +138,39 @@ export default function Index() {
         </TouchableOpacity>
       )}
 
-      {/* ปุ่มเกี่ยวกับ (ด้านล่างซ้าย ถ้าไม่มีรายการเลือก) */}
-      {selectedIds.length === 0 && (
-        <TouchableOpacity style={styles.aboutButton} onPress={() => router.push("/about")}>
-          <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
-          <Text style={styles.aboutButtonText}>เกี่ยวกับ</Text>
+      {/* ปุ่มเมนูขยาย */}
+      <View style={styles.menuContainer}>
+        <Animated.View style={[styles.menuExpanded, { height: menuHeight }]}>
+          {menuExpanded && (
+            <>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  router.push("/about");
+                  toggleMenu();
+                }}
+              >
+                <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
+                <Text style={styles.menuItemText}>เกี่ยวกับ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  router.push("/create");
+                  toggleMenu();
+                }}
+              >
+                <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+                <Text style={styles.menuItemText}>สร้าง</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </Animated.View>
+        <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
+          <Ionicons name="menu-outline" size={24} color="#FFFFFF" />
+          <Text style={styles.menuButtonText}>เมนู</Text>
         </TouchableOpacity>
-      )}
-
-      {/* ปุ่มสร้างรายการใหม่ (ด้านล่างขวา) */}
-      <TouchableOpacity style={styles.createButtonBottom} onPress={() => router.push("/create")}>
-        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
-        <Text style={styles.createButtonText}>สร้างรายการใหม่</Text>
-      </TouchableOpacity>
+      </View>
 
       {/* Popup สำหรับแสดงเนื้อหาโน้ต */}
       <Modal
@@ -227,23 +267,6 @@ const styles = StyleSheet.create({
   },
   noTodoText: { fontSize: 20, fontWeight: "600", color: "#000000", opacity: 0.8 },
   noTodoSubText: { fontSize: 16, color: "#666666", marginTop: 5, fontStyle: "italic" },
-  createButtonBottom: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: "#000000",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 25,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  createButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 5,
-  },
   deleteSelectedButton: {
     position: "absolute",
     bottom: 20,
@@ -261,10 +284,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 5,
   },
-  aboutButton: {
+  menuContainer: {
     position: "absolute",
     bottom: 20,
-    left: 20,
+    right: 20,
+    alignItems: "flex-end",
+  },
+  menuButton: {
     backgroundColor: "#000000",
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -272,7 +298,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  aboutButtonText: {
+  menuButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+  menuExpanded: {
+    backgroundColor: "#000000",
+    borderRadius: 15,
+    width: 150,
+    overflow: "hidden",
+    position: "absolute",
+    bottom: 50, // วางเหนือปุ่มเมนู
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  menuItemText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
