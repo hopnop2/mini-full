@@ -118,6 +118,14 @@ export default function Index() {
         </TouchableOpacity>
       )}
 
+      {/* ปุ่มเกี่ยวกับ (ด้านล่างซ้าย ถ้าไม่มีรายการเลือก) */}
+      {selectedIds.length === 0 && (
+        <TouchableOpacity style={styles.aboutButton} onPress={() => router.push("/about")}>
+          <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
+          <Text style={styles.aboutButtonText}>เกี่ยวกับ</Text>
+        </TouchableOpacity>
+      )}
+
       {/* ปุ่มสร้างรายการใหม่ (ด้านล่างขวา) */}
       <TouchableOpacity style={styles.createButtonBottom} onPress={() => router.push("/create")}>
         <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
@@ -222,7 +230,7 @@ const styles = StyleSheet.create({
   createButtonBottom: {
     position: "absolute",
     bottom: 20,
-    right: 20, // ย้ายไปขวา
+    right: 20,
     backgroundColor: "#000000",
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -239,7 +247,7 @@ const styles = StyleSheet.create({
   deleteSelectedButton: {
     position: "absolute",
     bottom: 20,
-    left: 20, // ย้ายไปซ้าย
+    left: 20,
     backgroundColor: "#000000",
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -248,6 +256,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   deleteSelectedText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+  aboutButton: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    backgroundColor: "#000000",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 25,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  aboutButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",

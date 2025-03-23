@@ -16,7 +16,13 @@ export default function RootLayout() {
           <Stack.Screen
             name="create"
             options={{
-              headerShown: false, // ปิด header ของหน้า create
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="about"
+            options={{
+              headerShown: false,
             }}
           />
         </Stack>

@@ -73,8 +73,6 @@ export default function CreateTodo() {
             textColor="#000000"
             placeholderTextColor="#666666"
             multiline
-            minHeight={100}
-            maxHeight={200}
             autoFocus
             returnKeyType="done"
             onSubmitEditing={handleAddTodo}
