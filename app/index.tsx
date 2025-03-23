@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useContext, useState } from "react";
 import {
   ScrollView,
@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
-import { Todo } from "@/context/Todo.context"; // Import Todo interface
+import { Todo } from "@/context/Todo.context";
 import Card from "@/components/Card";
 
 export default function Index() {
@@ -55,11 +55,6 @@ export default function Index() {
       <View style={styles.header}>
         <Ionicons name="book-outline" size={30} color="#FFFFFF" style={styles.headerIconLeft} />
         <Text style={styles.todoHeader}>รายการของฉัน</Text>
-        <Link asChild href="/create">
-          <TouchableOpacity style={styles.createButtonHeader}>
-            <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </Link>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
           <Ionicons name="person-outline" size={24} color="#FFFFFF" style={styles.headerIconRight} />
         </TouchableOpacity>
@@ -110,18 +105,24 @@ export default function Index() {
         ) : (
           <View style={styles.noTodoContainer}>
             <Text style={styles.noTodoText}>ไม่พบรายการ</Text>
-            <Text style={styles.noTodoSubText}>เพิ่มรายการใหม่ด้านบน</Text>
+            <Text style={styles.noTodoSubText}>เพิ่มรายการใหม่ด้านล่าง</Text>
           </View>
         )}
       </ScrollView>
 
-      {/* ปุ่มลบที่เลือก */}
+      {/* ปุ่มลบที่เลือก (ด้านล่างซ้าย) */}
       {selectedIds.length > 0 && (
         <TouchableOpacity style={styles.deleteSelectedButton} onPress={handleRemoveSelected}>
           <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
           <Text style={styles.deleteSelectedText}>ลบที่เลือก ({selectedIds.length})</Text>
         </TouchableOpacity>
       )}
+
+      {/* ปุ่มสร้างรายการใหม่ (ด้านล่างขวา) */}
+      <TouchableOpacity style={styles.createButtonBottom} onPress={() => router.push("/create")}>
+        <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+        <Text style={styles.createButtonText}>สร้างรายการใหม่</Text>
+      </TouchableOpacity>
 
       {/* Popup สำหรับแสดงเนื้อหาโน้ต */}
       <Modal
@@ -178,7 +179,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  createButtonHeader: { marginRight: 10 },
   headerIconLeft: { marginRight: 10 },
   headerIconRight: { marginLeft: 10 },
   modalOverlay: {
@@ -219,11 +219,28 @@ const styles = StyleSheet.create({
   },
   noTodoText: { fontSize: 20, fontWeight: "600", color: "#000000", opacity: 0.8 },
   noTodoSubText: { fontSize: 16, color: "#666666", marginTop: 5, fontStyle: "italic" },
+  createButtonBottom: {
+    position: "absolute",
+    bottom: 20,
+    right: 20, // ย้ายไปขวา
+    backgroundColor: "#000000",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 25,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  createButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
   deleteSelectedButton: {
     position: "absolute",
     bottom: 20,
-    right: 20,
-    backgroundColor: "#FF0000",
+    left: 20, // ย้ายไปซ้าย
+    backgroundColor: "#000000",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 25,

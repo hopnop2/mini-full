@@ -16,7 +16,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="create"
             options={{
-              headerTitle: "Create Todo",
+              headerShown: false, // ปิด header ของหน้า create
             }}
           />
         </Stack>
