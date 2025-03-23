@@ -30,7 +30,7 @@ export default function CreateTodo() {
         <View style={styles.header}>
           <Ionicons
             name="create-outline"
-            size={width * 0.06} // ลดขนาดไอคอน
+            size={width * 0.06}
             color="#FFFFFF"
             style={styles.headerIcon}
           />
@@ -62,7 +62,7 @@ export default function CreateTodo() {
             <AppButton style={styles.backButton}>
               <Ionicons
                 name="arrow-back-outline"
-                size={width * 0.045} // ลดขนาดไอคอน
+                size={width * 0.045}
                 color="#000000"
               />
               <Text style={styles.backButtonText}>กลับ</Text>
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#000000",
-    paddingVertical: 10, // ลด paddingVertical
+    paddingVertical: 10,
     paddingHorizontal: width * 0.04,
     borderBottomWidth: 2,
     borderBottomColor: "#FFFFFF",
@@ -101,17 +101,17 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   headerText: {
-    fontSize: width * 0.05, // ลดขนาดข้อความ
+    fontSize: width * 0.05,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
   formContainer: {
     flex: 1,
     paddingHorizontal: width * 0.05,
-    paddingTop: height * 0.1, // เพิ่ม paddingTop เพื่อความสมดุล
+    paddingTop: height * 0.1,
     alignItems: "center",
-    justifyContent: "center", // จัดกึ่งกลางแนวตั้ง
-    gap: 25, // เพิ่มระยะห่างระหว่าง element
+    justifyContent: "center",
+    gap: 25, // ระยะห่างระหว่าง element
   },
   input: {
     width: "90%",
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
     borderColor: "#FFFFFF",
     borderWidth: 2,
-    paddingVertical: 14, // เพิ่ม padding
+    paddingVertical: 14,
     paddingHorizontal: 30,
     borderRadius: 25,
     elevation: 4,
@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 4,
     alignItems: "center",
-    width: "80%", // เพิ่มขนาดปุ่ม
+    width: "80%",
     maxWidth: 300,
   },
   buttonText: {
-    fontSize: width * 0.045, // เพิ่มขนาดข้อความ
+    fontSize: width * 0.045,
     fontWeight: "bold",
     color: "#FFFFFF",
   },
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderColor: "#000000",
     borderWidth: 2,
-    paddingVertical: 12, // เพิ่ม padding
+    paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 25,
     flexDirection: "row",
@@ -156,11 +156,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
-    width: "60%", // เพิ่มขนาดปุ่ม
+    width: "60%",
     maxWidth: 200,
   },
   backButtonText: {
-    fontSize: width * 0.04, // เพิ่มขนาดข้อความ
+    fontSize: width * 0.04,
     fontWeight: "600",
     color: "#000000",
     marginLeft: 5,

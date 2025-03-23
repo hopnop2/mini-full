@@ -11,13 +11,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
+import { Todo } from "@/context/Todo.context"; // Import Todo interface
 import Card from "@/components/Card";
 
 export default function Index() {
   const { todos, removeMultipleTodos } = useContext(TodoContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null); // เก็บโน้ตที่เลือก
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
 
   const handleLogout = () => {
     console.log("Logged out");
@@ -103,7 +104,7 @@ export default function Index() {
                 todo={todo}
                 isSelected={selectedIds.includes(todo.id)}
                 onSelect={handleSelect}
-                onPress={() => openPopup(todo)} // เปิด popup
+                onPress={() => openPopup(todo)}
               />
             ))
         ) : (
@@ -135,13 +136,15 @@ export default function Index() {
               <>
                 <Text style={styles.popupTitle}>{selectedTodo.text}</Text>
                 <Text style={styles.popupTimestamp}>
-                  สร้างเมื่อ: {new Date(selectedTodo.timestamp!).toLocaleString("th-TH", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  สร้างเมื่อ: {selectedTodo.timestamp
+                    ? new Date(selectedTodo.timestamp).toLocaleString("th-TH", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "ไม่ระบุ"}
                 </Text>
                 <TouchableOpacity onPress={closePopup} style={styles.closeButton}>
                   <Ionicons name="close-circle-outline" size={24} color="#FFFFFF" />
@@ -202,7 +205,12 @@ const styles = StyleSheet.create({
   },
   modalText: { fontSize: 18, color: "#000000", marginLeft: 10 },
   todoContainer: { flex: 1 },
-  todoContentContainer: { padding: 15, paddingBottom: 80 },
+  todoContentContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 15,
+  },
   noTodoContainer: {
     flex: 1,
     justifyContent: "center",
