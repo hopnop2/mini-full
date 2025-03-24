@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
 import { Todo } from "@/context/Todo.context";
 import Card from "@/components/Card";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Index() {
   const { todos, removeMultipleTodos } = useContext(TodoContext);
@@ -23,10 +24,16 @@ export default function Index() {
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [menuHeight] = useState(new Animated.Value(0));
 
-  const handleLogout = () => {
-    console.log("Logged out");
-    setModalVisible(false);
-    router.push("/login"); // เพิ่มการนำทางไปที่หน้า login
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('username');
+      await AsyncStorage.removeItem('password');
+      console.log("Logged out");
+      setModalVisible(false);
+      router.replace("/login"); // ใช้ replace เพื่อป้องกันย้อนกลับไปหน้า Index
+    } catch (error) {
+      console.error('Error logging out', error);
+    }
   };
 
   const handleSelect = (id: number) => {
@@ -63,7 +70,7 @@ export default function Index() {
     } else {
       setMenuExpanded(true);
       Animated.timing(menuHeight, {
-        toValue: 120, // ความสูงเมื่อขยาย (ปรับได้)
+        toValue: 120,
         duration: 300,
         useNativeDriver: false,
       }).start();
@@ -72,7 +79,6 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      {/* แถบหัวเรื่อง */}
       <View style={styles.header}>
         <Ionicons name="book-outline" size={30} color="#FFFFFF" style={styles.headerIconLeft} />
         <Text style={styles.todoHeader}>รายการของฉัน</Text>
@@ -81,7 +87,6 @@ export default function Index() {
         </TouchableOpacity>
       </View>
 
-      {/* Modal เมนูโปรไฟล์ */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -94,12 +99,16 @@ export default function Index() {
           onPress={() => setModalVisible(false)}
         >
           <View style={styles.modalContent}>
-            <Link href="/about" asChild>
-              <TouchableOpacity style={styles.modalItem} onPress={() => setModalVisible(false)}>
-                <Ionicons name="information-circle-outline" size={20} color="#000000" />
-                <Text style={styles.modalText}>เกี่ยวกับ</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity
+              style={styles.modalItem}
+              onPress={() => {
+                setModalVisible(false);
+                router.push("/about"); // ใช้ push เพื่อให้ย้อนกลับได้
+              }}
+            >
+              <Ionicons name="information-circle-outline" size={20} color="#000000" />
+              <Text style={styles.modalText}>เกี่ยวกับ</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.modalItem} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color="#FF0000" />
               <Text style={[styles.modalText, { color: "#FF0000" }]}>ล็อกเอาท์</Text>
@@ -108,7 +117,6 @@ export default function Index() {
         </TouchableOpacity>
       </Modal>
 
-      {/* รายการการ์ด */}
       <ScrollView style={styles.todoContainer} contentContainerStyle={styles.todoContentContainer}>
         {todos.length > 0 ? (
           todos
@@ -131,7 +139,6 @@ export default function Index() {
         )}
       </ScrollView>
 
-      {/* ปุ่มลบที่เลือก (ด้านล่างซ้าย) */}
       {selectedIds.length > 0 && (
         <TouchableOpacity style={styles.deleteSelectedButton} onPress={handleRemoveSelected}>
           <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
@@ -139,7 +146,6 @@ export default function Index() {
         </TouchableOpacity>
       )}
 
-      {/* ปุ่มเมนูขยาย */}
       <View style={styles.menuContainer}>
         <Animated.View style={[styles.menuExpanded, { height: menuHeight }]}>
           {menuExpanded && (
@@ -147,7 +153,7 @@ export default function Index() {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
-                  router.push("/about");
+                  router.push("/about"); // ใช้ push เพื่อให้ย้อนกลับได้
                   toggleMenu();
                 }}
               >
@@ -157,7 +163,7 @@ export default function Index() {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
-                  router.push("/create");
+                  router.push("/create"); // ใช้ push เพื่อให้ย้อนกลับได้
                   toggleMenu();
                 }}
               >
@@ -173,7 +179,6 @@ export default function Index() {
         </TouchableOpacity>
       </View>
 
-      {/* Popup สำหรับแสดงเนื้อหาโน้ต */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -311,7 +316,7 @@ const styles = StyleSheet.create({
     width: 150,
     overflow: "hidden",
     position: "absolute",
-    bottom: 50, // วางเหนือปุ่มเมนู
+    bottom: 50,
   },
   menuItem: {
     flexDirection: "row",
