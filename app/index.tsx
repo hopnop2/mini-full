@@ -26,6 +26,7 @@ export default function Index() {
   const handleLogout = () => {
     console.log("Logged out");
     setModalVisible(false);
+    router.push("/login"); // เพิ่มการนำทางไปที่หน้า login
   };
 
   const handleSelect = (id: number) => {

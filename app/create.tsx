@@ -15,7 +15,7 @@ import {
   Image,
 } from "react-native";
 import { TextInput } from "react-native-paper";
-import { Link, router } from "expo-router"; // เพิ่ม router
+import { Link, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
@@ -59,11 +59,13 @@ export default function CreateTodo() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.push("/index")}>
+          <TouchableOpacity onPress={() => router.push('/')}>
             <Ionicons name="arrow-back-outline" size={isLargeScreen ? 30 : width * 0.06} color="#FFFFFF" style={styles.backIcon} />
           </TouchableOpacity>
-          <Ionicons name="create-outline" size={isLargeScreen ? 30 : width * 0.06} color="#FFFFFF" style={styles.headerIconLeft} />
-          <Text style={[styles.headerText, { marginLeft: 0 }]}>เพิ่มรายการใหม่</Text>
+          <View style={styles.headerCenter}>
+            <Ionicons name="create-outline" size={isLargeScreen ? 30 : width * 0.06} color="#FFFFFF" style={styles.headerIconLeft} />
+            <Text style={styles.headerText}>เพิ่มรายการใหม่</Text>
+          </View>
         </View>
         <ScrollView contentContainerStyle={styles.formContainer}>
           <TextInput
@@ -105,15 +107,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.04,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between", // เปลี่ยนจาก "center" เป็น "space-between"
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  backIcon: { marginLeft: 10, position: "absolute", left: 0 },
-  headerIconLeft: { marginLeft: 10 },
+  backIcon: { 
+    marginLeft: 10, 
+    // ลบ position: "absolute" และ left: 0 เพื่อให้อยู่ใน flow ของ flexbox
+  },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1, // ให้ส่วนนี้ขยายเต็มที่เพื่อจัดกึ่งกลาง
+  },
+  headerIconLeft: { 
+    marginRight: 10, // เปลี่ยนจาก marginLeft เป็น marginRight เพื่อให้ไอคอนอยู่ใกล้ข้อความ
+  },
   headerText: {
     fontSize: isLargeScreen ? 26 : width * 0.055,
     fontWeight: "bold",
