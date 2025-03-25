@@ -1,6 +1,6 @@
 import { AppButton } from "@/components";
 import TodoContext from "@/context/Todo.context";
-import { useContext, useState, useEffect } from "react"; // เพิ่ม useEffect
+import { useContext, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,12 +13,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  BackHandler, // เพิ่ม BackHandler
+  BackHandler,
 } from "react-native";
 import { TextInput } from "react-native-paper";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { supabase } from '@/utils/supabase';
 import * as ImagePicker from "expo-image-picker";
+import { decode } from "base64-arraybuffer";
 
 const { width } = Dimensions.get("window");
 const isLargeScreen = width > 768;
@@ -27,12 +29,12 @@ export default function CreateTodo() {
   const { addTodo } = useContext(TodoContext);
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-  // จัดการปุ่มย้อนกลับของระบบ
   useEffect(() => {
     const backAction = () => {
-      router.replace('/'); // ไปหน้า Index เมื่อกดปุ่มย้อนกลับของระบบ
-      return true; // บอกระบบว่าเราได้จัดการการกดปุ่มย้อนกลับแล้ว
+      router.replace('/');
+      return true;
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -40,18 +42,58 @@ export default function CreateTodo() {
       backAction
     );
 
-    return () => backHandler.remove(); // ล้าง event listener เมื่อออกจากหน้า
+    return () => backHandler.remove();
   }, []);
 
-  const handleAddTodo = () => {
-    if (!text.trim() && !image) {
+  // ดีบัก bucket ที่มีอยู่ใน Supabase Storage
+  useEffect(() => {
+    const checkBuckets = async () => {
+      try {
+        const { data: buckets, error } = await supabase.storage.listBuckets();
+        if (error) {
+          console.error('Error listing buckets:', error.message);
+          return;
+        }
+        console.log('Available buckets:', buckets);
+      } catch (error: any) {
+        console.error('Error in checkBuckets:', error.message);
+      }
+    };
+    checkBuckets();
+  }, []);
+
+  const handleAddTodo = async () => {
+    if (!text.trim() && !imageUrl) {
       Alert.alert("ข้อผิดพลาด", "กรุณากรอกข้อมูลหรือเพิ่มรูปภาพ");
       return;
     }
-    addTodo?.({ text, image });
-    setText("");
-    setImage(null);
-    Alert.alert("สำเร็จ", "เพิ่มรายการเรียบร้อยแล้ว");
+
+    try {
+      if (imageUrl) {
+        const { error } = await supabase
+          .from('product_images')
+          .insert({ image_url: imageUrl });
+
+        if (error) {
+          console.error('Error inserting into product_images:', error.message);
+          throw error;
+        }
+      }
+
+      addTodo?.({ text, image: imageUrl });
+      setText("");
+      setImage(null);
+      setImageUrl(null);
+      Alert.alert("สำเร็จ", "เพิ่มรายการเรียบร้อยแล้ว", [
+        {
+          text: "ตกลง",
+          onPress: () => router.replace('/'),
+        },
+      ]);
+    } catch (error: any) {
+      console.error('Error in handleAddTodo:', error.message);
+      Alert.alert("ข้อผิดพลาด", "ไม่สามารถเพิ่มรายการได้ กรุณาลองใหม่");
+    }
   };
 
   const pickImage = async () => {
@@ -60,14 +102,47 @@ export default function CreateTodo() {
       Alert.alert("ข้อผิดพลาด", "ต้องให้สิทธิ์ในการเข้าถึงแกลเลอรี");
       return;
     }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
+      base64: true,
     });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+
+    if (!result.canceled && result.assets[0].base64) {
+      try {
+        setImage(result.assets[0].uri);
+
+        const fileName = `product_image_${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('product-images') // เปลี่ยนจาก 'product_images' เป็น 'product-images'
+          .upload(fileName, decode(result.assets[0].base64), {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError.message);
+          if (uploadError.message.includes('Bucket not found')) {
+            Alert.alert("ข้อผิดพลาด", "ไม่พบ bucket 'product-images' ใน Supabase Storage กรุณาตรวจสอบการตั้งค่า bucket");
+          } else {
+            Alert.alert("ข้อผิดพลาด", "ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่");
+          }
+          throw uploadError;
+        }
+
+        const { data } = supabase.storage
+          .from('product-images') // เปลี่ยนจาก 'product_images' เป็น 'product-images'
+          .getPublicUrl(fileName);
+
+        const publicUrl = data.publicUrl;
+        setImageUrl(publicUrl);
+      } catch (error: any) {
+        console.error('Error in pickImage:', error.message);
+        Alert.alert("ข้อผิดพลาด", "ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่");
+      }
     }
   };
 
@@ -105,6 +180,19 @@ export default function CreateTodo() {
             <Ionicons name="image-outline" size={24} color="#FFFFFF" />
             <Text style={styles.imageButtonText}>เพิ่มรูปภาพ</Text>
           </TouchableOpacity>
+          {imageUrl && (
+            <TextInput
+              label="URL รูปภาพ"
+              value={imageUrl}
+              editable={false}
+              mode="outlined"
+              style={styles.input}
+              outlineColor="#000000"
+              activeOutlineColor="#000000"
+              textColor="#000000"
+              placeholderTextColor="#666666"
+            />
+          )}
           <AppButton onPress={handleAddTodo} style={styles.createButton}>
             <Text style={styles.buttonText}>สร้างรายการ</Text>
           </AppButton>

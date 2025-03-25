@@ -10,6 +10,7 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Image, // เพิ่ม Image
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
@@ -26,7 +27,6 @@ export default function Index() {
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [menuHeight] = useState(new Animated.Value(0));
 
-  // ตรวจสอบสถานะล็อกอินเมื่อหน้าโหลด
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -37,7 +37,6 @@ export default function Index() {
     checkSession();
   }, []);
 
-  // จัดการปุ่มย้อนกลับของมือถือ
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
       return true;
@@ -45,7 +44,6 @@ export default function Index() {
     return () => backHandler.remove();
   }, []);
 
-  // ฟังก์ชันล็อกเอาท์
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -57,7 +55,7 @@ export default function Index() {
 
       setModalVisible(false);
       router.replace("/login");
-    } catch (error: any) { // เปลี่ยนเป็น any
+    } catch (error: any) {
       console.error('Error logging out:', error.message);
       Alert.alert("ข้อผิดพลาด", "ไม่สามารถล็อกเอาท์ได้ กรุณาลองใหม่");
     }
@@ -216,6 +214,12 @@ export default function Index() {
           <View style={styles.popupContent}>
             {selectedTodo && (
               <>
+                {selectedTodo.image && (
+                  <Image
+                    source={{ uri: selectedTodo.image }}
+                    style={styles.popupImage}
+                  />
+                )}
                 <Text style={styles.popupTitle}>{selectedTodo.text}</Text>
                 <Text style={styles.popupTimestamp}>
                   สร้างเมื่อ: {selectedTodo.timestamp
@@ -372,6 +376,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#000000",
     alignItems: "center",
+  },
+  popupImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   popupTitle: { fontSize: 20, fontWeight: "bold", color: "#000000", marginBottom: 10 },
   popupTimestamp: { fontSize: 14, color: "#666666", marginBottom: 20 },
