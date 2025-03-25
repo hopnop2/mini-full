@@ -55,7 +55,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="about"
             options={{
-              headerShown: true,
+              headerShown: false,
               title: "เกี่ยวกับ",
             }}
           />

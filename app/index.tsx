@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { useContext, useState, useEffect } from "react"; // เพิ่ม useEffect
+import { useContext, useState, useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -9,13 +9,14 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
-  BackHandler, // เพิ่ม BackHandler
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
 import { Todo } from "@/context/Todo.context";
 import Card from "@/components/Card";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/utils/supabase';
 
 export default function Index() {
   const { todos, removeMultipleTodos } = useContext(TodoContext);
@@ -25,25 +26,40 @@ export default function Index() {
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [menuHeight] = useState(new Animated.Value(0));
 
+  // ตรวจสอบสถานะล็อกอินเมื่อหน้าโหลด
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login");
+      }
+    };
+    checkSession();
+  }, []);
+
   // จัดการปุ่มย้อนกลับของมือถือ
   useEffect(() => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-      // ป้องกันการย้อนกลับ ถ้าอยู่ที่หน้า Index
-      return true; // true = บล็อกปุ่มย้อนกลับ
+      return true;
     });
-
-    return () => backHandler.remove(); // ล้าง event listener เมื่อออกจากหน้า
+    return () => backHandler.remove();
   }, []);
 
+  // ฟังก์ชันล็อกเอาท์
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('username');
-      await AsyncStorage.removeItem('password');
-      console.log("Logged out");
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('isLoggedIn');
+      console.log("Logged out successfully");
+
       setModalVisible(false);
-      router.replace("/login"); // ใช้ replace เพื่อไม่ให้ย้อนกลับมา Index
-    } catch (error) {
-      console.error('Error logging out', error);
+      router.replace("/login");
+    } catch (error: any) { // เปลี่ยนเป็น any
+      console.error('Error logging out:', error.message);
+      Alert.alert("ข้อผิดพลาด", "ไม่สามารถล็อกเอาท์ได้ กรุณาลองใหม่");
     }
   };
 
@@ -114,7 +130,7 @@ export default function Index() {
               style={styles.modalItem}
               onPress={() => {
                 setModalVisible(false);
-                router.replace("/about"); // เปลี่ยนเป็น replace
+                router.replace("/about");
               }}
             >
               <Ionicons name="information-circle-outline" size={20} color="#000000" />
@@ -164,7 +180,7 @@ export default function Index() {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
-                  router.replace("/about"); // เปลี่ยนเป็น replace
+                  router.replace("/about");
                   toggleMenu();
                 }}
               >
@@ -174,7 +190,7 @@ export default function Index() {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
-                  router.replace("/create"); // เปลี่ยนเป็น replace
+                  router.replace("/create");
                   toggleMenu();
                 }}
               >
@@ -225,7 +241,6 @@ export default function Index() {
   );
 }
 
-// styles เดิมไม่เปลี่ยนแปลง
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
   header: {

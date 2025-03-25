@@ -1,18 +1,157 @@
-import { StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image, BackHandler } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
-import React from "react";
+import { router } from "expo-router";
+import React, { useState, useEffect } from "react";
+import { supabase } from '@/utils/supabase';
+import * as ImagePicker from "expo-image-picker";
+import { Alert } from 'react-native';
+import { decode } from "base64-arraybuffer";
 
 export default function Profile() {
+  const [displayName, setDisplayName] = useState('ชื่อผู้ใช้');
+  const [avatarUrl, setAvatarUrl] = useState('https://via.placeholder.com/150');
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // ดึงข้อมูลผู้ใช้เมื่อหน้าโหลด
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          console.error('Error fetching user:', userError?.message || 'No user found');
+          router.replace('/login');
+          return;
+        }
+
+        setUserId(user.id);
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          if (data.display_name) {
+            setDisplayName(data.display_name);
+          }
+          if (data.avatar_url) {
+            setAvatarUrl(data.avatar_url);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error fetching profile:', error.message);
+        setDisplayName('ชื่อผู้ใช้');
+        setAvatarUrl('https://via.placeholder.com/150');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // ขอ permission สำหรับแกลเลอรี่เมื่อหน้าโหลด
+  useEffect(() => {
+    (async () => {
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    })();
+  }, []);
+
+  // จัดการปุ่มย้อนกลับของระบบ
+  useEffect(() => {
+    const backAction = () => {
+      router.replace('/'); // ไปหน้า Index เมื่อกดปุ่มย้อนกลับของระบบ
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  // ฟังก์ชันสำหรับเลือกและอัปโหลดรูปภาพ
+  const handleUploadAvatar = async () => {
+    try {
+      const libraryPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+      if (!libraryPermission.granted) {
+        const newLibraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!newLibraryPermission.granted) {
+          Alert.alert("ข้อผิดพลาด", "ต้องให้สิทธิ์การเข้าถึงแกลเลอรี่เพื่อเลือกภาพ");
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0].base64) {
+        setLoading(true);
+
+        const fileName = `avatar_${userId}_${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, decode(result.assets[0].base64), {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        const publicUrl = data.publicUrl;
+
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            avatar_url: publicUrl,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId);
+
+        if (updateError) throw updateError;
+
+        setAvatarUrl(publicUrl);
+      }
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error.message);
+      Alert.alert("ข้อผิดพลาด", "ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ฟังก์ชันสำหรับจัดการการกดปุ่มย้อนกลับใน header
+  const handleBackPress = () => {
+    router.replace('/'); // ไปหน้า Index
+  };
+
   return (
     <View style={styles.container}>
       {/* ส่วนหัว */}
       <View style={styles.header}>
-        <Link href="/" asChild>
-          <TouchableOpacity style={styles.backButton}>
-            <Ionicons name="arrow-back-outline" size={30} color="#FFFFFF" />
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={handleBackPress}
+          activeOpacity={0.7} // เพิ่ม activeOpacity เพื่อให้เห็น feedback เมื่อกด
+        >
+          <Ionicons name="arrow-back-outline" size={30} color="#FFFFFF" />
+        </TouchableOpacity>
         <Text style={styles.headerText}>โปรไฟล์</Text>
       </View>
 
@@ -21,16 +160,16 @@ export default function Profile() {
         {/* รูปโปรไฟล์ */}
         <View style={styles.avatarContainer}>
           <Image
-            source={{ uri: "https://via.placeholder.com/150" }} // รูปตัวอย่าง สามารถเปลี่ยนได้
+            source={{ uri: avatarUrl }}
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.editAvatarButton}>
+          <TouchableOpacity style={styles.editAvatarButton} onPress={handleUploadAvatar}>
             <Ionicons name="camera-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
         {/* ชื่อผู้ใช้ */}
-        <Text style={styles.username}>ชื่อผู้ใช้</Text>
+        <Text style={styles.username}>{loading ? 'กำลังโหลด...' : displayName}</Text>
         <Text style={styles.bio}>คำอธิบายสั้นๆ เกี่ยวกับตัวคุณ</Text>
 
         {/* ข้อมูลเพิ่มเติม */}
@@ -75,10 +214,12 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     flex: 1,
     textAlign: "center",
+    marginLeft: 40, // เพิ่ม marginLeft เพื่อให้ปุ่มย้อนกลับไม่ถูกบัง
   },
   backButton: {
     position: "absolute",
     left: 15,
+    zIndex: 1, // เพิ่ม zIndex เพื่อให้ปุ่มอยู่ด้านหน้า
   },
   profileContainer: {
     flex: 1,
@@ -121,12 +262,12 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     marginBottom: 30,
-    alignItems: "center", // จัดให้อยู่ตรงกลาง
+    alignItems: "center",
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center", // จัดให้เนื้อหาในแต่ละ item อยู่ตรงกลาง
+    justifyContent: "center",
     marginVertical: 10,
   },
   infoText: {
