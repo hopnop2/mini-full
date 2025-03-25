@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react"; // เพิ่ม useEffect
 import {
   ScrollView,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
+  BackHandler, // เพิ่ม BackHandler
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
@@ -24,13 +25,23 @@ export default function Index() {
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [menuHeight] = useState(new Animated.Value(0));
 
+  // จัดการปุ่มย้อนกลับของมือถือ
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+      // ป้องกันการย้อนกลับ ถ้าอยู่ที่หน้า Index
+      return true; // true = บล็อกปุ่มย้อนกลับ
+    });
+
+    return () => backHandler.remove(); // ล้าง event listener เมื่อออกจากหน้า
+  }, []);
+
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('username');
       await AsyncStorage.removeItem('password');
       console.log("Logged out");
       setModalVisible(false);
-      router.replace("/login"); // ใช้ replace เพื่อป้องกันย้อนกลับไปหน้า Index
+      router.replace("/login"); // ใช้ replace เพื่อไม่ให้ย้อนกลับมา Index
     } catch (error) {
       console.error('Error logging out', error);
     }
@@ -103,7 +114,7 @@ export default function Index() {
               style={styles.modalItem}
               onPress={() => {
                 setModalVisible(false);
-                router.push("/about"); // ใช้ push เพื่อให้ย้อนกลับได้
+                router.replace("/about"); // เปลี่ยนเป็น replace
               }}
             >
               <Ionicons name="information-circle-outline" size={20} color="#000000" />
@@ -153,7 +164,7 @@ export default function Index() {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
-                  router.push("/about"); // ใช้ push เพื่อให้ย้อนกลับได้
+                  router.replace("/about"); // เปลี่ยนเป็น replace
                   toggleMenu();
                 }}
               >
@@ -163,7 +174,7 @@ export default function Index() {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
-                  router.push("/create"); // ใช้ push เพื่อให้ย้อนกลับได้
+                  router.replace("/create"); // เปลี่ยนเป็น replace
                   toggleMenu();
                 }}
               >
@@ -214,6 +225,7 @@ export default function Index() {
   );
 }
 
+// styles เดิมไม่เปลี่ยนแปลง
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
   header: {
