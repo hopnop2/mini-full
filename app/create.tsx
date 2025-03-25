@@ -1,6 +1,6 @@
 import { AppButton } from "@/components";
 import TodoContext from "@/context/Todo.context";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react"; // เพิ่ม useEffect
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  BackHandler, // เพิ่ม BackHandler
 } from "react-native";
 import { TextInput } from "react-native-paper";
 import { Link, router } from "expo-router";
@@ -26,6 +27,21 @@ export default function CreateTodo() {
   const { addTodo } = useContext(TodoContext);
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
+
+  // จัดการปุ่มย้อนกลับของระบบ
+  useEffect(() => {
+    const backAction = () => {
+      router.replace('/'); // ไปหน้า Index เมื่อกดปุ่มย้อนกลับของระบบ
+      return true; // บอกระบบว่าเราได้จัดการการกดปุ่มย้อนกลับแล้ว
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // ล้าง event listener เมื่อออกจากหน้า
+  }, []);
 
   const handleAddTodo = () => {
     if (!text.trim() && !image) {
@@ -107,7 +123,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.04,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // เปลี่ยนจาก "center" เป็น "space-between"
+    justifyContent: "space-between",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -115,17 +131,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   backIcon: { 
-    marginLeft: 10, 
-    // ลบ position: "absolute" และ left: 0 เพื่อให้อยู่ใน flow ของ flexbox
+    marginLeft: 10,
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    flex: 1, // ให้ส่วนนี้ขยายเต็มที่เพื่อจัดกึ่งกลาง
+    flex: 1,
   },
   headerIconLeft: { 
-    marginRight: 10, // เปลี่ยนจาก marginLeft เป็น marginRight เพื่อให้ไอคอนอยู่ใกล้ข้อความ
+    marginRight: 10,
   },
   headerText: {
     fontSize: isLargeScreen ? 26 : width * 0.055,

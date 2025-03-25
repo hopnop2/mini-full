@@ -48,7 +48,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="create"
             options={{
-              headerShown: true,
+              headerShown: false,
               title: "สร้างโน้ต",
             }}
           />
