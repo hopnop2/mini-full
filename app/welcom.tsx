@@ -8,7 +8,7 @@ export default function Welcome() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/images/note-icon.jpg')} // ใช้ .png
+        source={require('../assets/images/note-icon.png')} // ใช้ .png
         style={styles.image}
       />
       <Text style={styles.text}>ยินดีต้อนรับสู่ PNOTE</Text>
