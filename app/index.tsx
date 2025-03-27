@@ -10,7 +10,8 @@ import {
   Alert,
   Animated,
   BackHandler,
-  Image, // เพิ่ม Image
+  Image,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import TodoContext from "@/context/Todo.context";
@@ -18,14 +19,32 @@ import { Todo } from "@/context/Todo.context";
 import Card from "@/components/Card";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/utils/supabase';
+import * as ImagePicker from "expo-image-picker";
+import { decode } from "base64-arraybuffer";
 
 export default function Index() {
-  const { todos, removeMultipleTodos } = useContext(TodoContext);
+  const { todos, removeMultipleTodos, updateTodo, setTodos } = useContext(TodoContext); // เพิ่ม setTodos
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [menuExpanded, setMenuExpanded] = useState(false);
   const [menuHeight] = useState(new Animated.Value(0));
+  const [editedText, setEditedText] = useState("");
+  const [editedImage, setEditedImage] = useState<string | null>(null);
+
+  // โหลดข้อมูลจาก Supabase เมื่อเริ่มต้น
+  useEffect(() => {
+    const fetchTodos = async () => {
+      const { data, error } = await supabase.from('todos').select('*');
+      if (error) {
+        console.error('Error fetching todos:', error);
+        Alert.alert("ข้อผิดพลาด", "ไม่สามารถโหลดรายการได้");
+      } else if (data) {
+        setTodos(data); // อัปเดต todos ใน context
+      }
+    };
+    fetchTodos();
+  }, [setTodos]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -38,21 +57,24 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-      return true;
-    });
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => true);
     return () => backHandler.remove();
   }, []);
+
+  useEffect(() => {
+    if (selectedTodo) {
+      setEditedText(selectedTodo.text);
+      setEditedImage(selectedTodo.image ?? null);
+    }
+  }, [selectedTodo]);
 
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('isLoggedIn');
       console.log("Logged out successfully");
-
       setModalVisible(false);
       router.replace("/login");
     } catch (error: any) {
@@ -67,16 +89,27 @@ export default function Index() {
     );
   };
 
-  const handleRemoveSelected = () => {
+  const handleRemoveSelected = async () => {
     Alert.alert("ลบโน้ต", "คุณแน่ใจหรือไม่ว่าต้องการลบโน้ตที่เลือก?", [
       { text: "ยกเลิก", style: "cancel" },
       {
         text: "ลบ",
         style: "destructive",
-        onPress: () => {
-          removeMultipleTodos(selectedIds);
-          setSelectedIds([]);
-          Alert.alert("สำเร็จ", "ลบโน้ตที่เลือกเรียบร้อยแล้ว");
+        onPress: async () => {
+          try {
+            const { error } = await supabase
+              .from('todos')
+              .delete()
+              .in('id', selectedIds);
+            if (error) throw error;
+
+            removeMultipleTodos(selectedIds);
+            setSelectedIds([]);
+            Alert.alert("สำเร็จ", "ลบโน้ตที่เลือกเรียบร้อยแล้ว");
+          } catch (error: any) {
+            console.error('Error deleting todos:', error);
+            Alert.alert("ข้อผิดพลาด", "ไม่สามารถลบรายการได้: " + (error.message || "ไม่ทราบสาเหตุ"));
+          }
         },
       },
     ]);
@@ -87,18 +120,86 @@ export default function Index() {
 
   const toggleMenu = () => {
     if (menuExpanded) {
-      Animated.timing(menuHeight, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: false,
-      }).start(() => setMenuExpanded(false));
+      Animated.timing(menuHeight, { toValue: 0, duration: 300, useNativeDriver: false }).start(() =>
+        setMenuExpanded(false)
+      );
     } else {
       setMenuExpanded(true);
-      Animated.timing(menuHeight, {
-        toValue: 120,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
+      Animated.timing(menuHeight, { toValue: 120, duration: 300, useNativeDriver: false }).start();
+    }
+  };
+
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("ข้อผิดพลาด", "ต้องให้สิทธิ์ในการเข้าถึงแกลเลอรี");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      try {
+        const fileName = `product_image_${Date.now()}.jpg`;
+        const base64Data = result.assets[0].base64 as string;
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, decode(base64Data), {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
+        const publicUrl = data.publicUrl;
+        setEditedImage(publicUrl);
+      } catch (error: any) {
+        console.error('Error uploading image:', error.message);
+        Alert.alert("ข้อผิดพลาด", "ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่");
+      }
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedTodo) return;
+
+    const updatedTodo: Todo = {
+      ...selectedTodo,
+      text: editedText,
+      image: editedImage,
+    };
+
+    try {
+      console.log('Updating todo with ID:', selectedTodo.id); // Debug ID
+      const { data, error } = await supabase
+        .from('todos')
+        .update({ text: editedText, image: editedImage })
+        .eq('id', selectedTodo.id)
+        .select();
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw new Error(error.message || 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('No matching todo found in Supabase for ID:', selectedTodo.id);
+        throw new Error('ไม่พบรายการที่ต้องการอัปเดตในฐานข้อมูล');
+      }
+
+      updateTodo(updatedTodo);
+      Alert.alert("สำเร็จ", "อัปเดตรายการเรียบร้อยแล้ว");
+      closePopup();
+    } catch (error: any) {
+      console.error('Error updating todo:', error);
+      Alert.alert("ข้อผิดพลาด", `ไม่สามารถอัปเดตรายการได้: ${error.message || 'ไม่ทราบสาเหตุ'}`);
     }
   };
 
@@ -112,25 +213,10 @@ export default function Index() {
         </TouchableOpacity>
       </View>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
+      <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
           <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalItem}
-              onPress={() => {
-                setModalVisible(false);
-                router.replace("/about");
-              }}
-            >
+            <TouchableOpacity style={styles.modalItem} onPress={() => { setModalVisible(false); router.replace("/about"); }}>
               <Ionicons name="information-circle-outline" size={20} color="#000000" />
               <Text style={styles.modalText}>เกี่ยวกับ</Text>
             </TouchableOpacity>
@@ -144,18 +230,15 @@ export default function Index() {
 
       <ScrollView style={styles.todoContainer} contentContainerStyle={styles.todoContentContainer}>
         {todos.length > 0 ? (
-          todos
-            .slice()
-            .reverse()
-            .map((todo) => (
-              <Card
-                key={todo.id}
-                todo={todo}
-                isSelected={selectedIds.includes(todo.id)}
-                onSelect={handleSelect}
-                onPress={() => openPopup(todo)}
-              />
-            ))
+          todos.slice().reverse().map((todo) => (
+            <Card
+              key={todo.id}
+              todo={todo}
+              isSelected={selectedIds.includes(todo.id)}
+              onSelect={handleSelect}
+              onPress={() => openPopup(todo)}
+            />
+          ))
         ) : (
           <View style={styles.noTodoContainer}>
             <Text style={styles.noTodoText}>ไม่พบรายการ</Text>
@@ -175,23 +258,11 @@ export default function Index() {
         <Animated.View style={[styles.menuExpanded, { height: menuHeight }]}>
           {menuExpanded && (
             <>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  router.replace("/about");
-                  toggleMenu();
-                }}
-              >
+              <TouchableOpacity style={styles.menuItem} onPress={() => { router.replace("/about"); toggleMenu(); }}>
                 <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
                 <Text style={styles.menuItemText}>เกี่ยวกับ</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  router.replace("/create");
-                  toggleMenu();
-                }}
-              >
+              <TouchableOpacity style={styles.menuItem} onPress={() => { router.replace("/create"); toggleMenu(); }}>
                 <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
                 <Text style={styles.menuItemText}>สร้าง</Text>
               </TouchableOpacity>
@@ -204,23 +275,27 @@ export default function Index() {
         </TouchableOpacity>
       </View>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={selectedTodo !== null}
-        onRequestClose={closePopup}
-      >
+      <Modal animationType="fade" transparent={true} visible={selectedTodo !== null} onRequestClose={closePopup}>
         <View style={styles.popupOverlay}>
           <View style={styles.popupContent}>
             {selectedTodo && (
               <>
-                {selectedTodo.image && (
-                  <Image
-                    source={{ uri: selectedTodo.image }}
-                    style={styles.popupImage}
-                  />
+                {editedImage ? (
+                  <Image source={{ uri: editedImage }} style={styles.popupImage} />
+                ) : (
+                  <Text style={styles.noImageText}>ไม่มีรูปภาพ</Text>
                 )}
-                <Text style={styles.popupTitle}>{selectedTodo.text}</Text>
+                <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+                  <Ionicons name="image-outline" size={24} color="#FFFFFF" />
+                  <Text style={styles.imageButtonText}>เปลี่ยนรูปภาพ</Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.popupInput}
+                  value={editedText}
+                  onChangeText={setEditedText}
+                  placeholder="แก้ไขข้อความ"
+                  multiline
+                />
                 <Text style={styles.popupTimestamp}>
                   สร้างเมื่อ: {selectedTodo.timestamp
                     ? new Date(selectedTodo.timestamp).toLocaleString("th-TH", {
@@ -232,10 +307,16 @@ export default function Index() {
                       })
                     : "ไม่ระบุ"}
                 </Text>
-                <TouchableOpacity onPress={closePopup} style={styles.closeButton}>
-                  <Ionicons name="close-circle-outline" size={24} color="#FFFFFF" />
-                  <Text style={styles.closeButtonText}>ปิด</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity onPress={handleSaveEdit} style={styles.saveButton}>
+                    <Ionicons name="save-outline" size={24} color="#FFFFFF" />
+                    <Text style={styles.saveButtonText}>บันทึก</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={closePopup} style={styles.closeButton}>
+                    <Ionicons name="close-circle-outline" size={24} color="#FFFFFF" />
+                    <Text style={styles.closeButtonText}>ปิด</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
@@ -383,7 +464,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
-  popupTitle: { fontSize: 20, fontWeight: "bold", color: "#000000", marginBottom: 10 },
   popupTimestamp: { fontSize: 14, color: "#666666", marginBottom: 20 },
   closeButton: {
     backgroundColor: "#000000",
@@ -394,4 +474,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   closeButtonText: { color: "#FFFFFF", fontWeight: "bold", marginLeft: 5 },
+  popupInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#000000",
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  imageButton: {
+    backgroundColor: "#000000",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  imageButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+  noImageText: {
+    fontSize: 16,
+    color: "#666666",
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  saveButton: {
+    backgroundColor: "#000000",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
 });
